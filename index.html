@@ -124,25 +124,11 @@
             }
         }
 
-        .logo {
-            animation-delay: 0.1s;
-        }
-
-        .hero-title {
-            animation-delay: 0.3s;
-        }
-
-        .hero-subtitle {
-            animation-delay: 0.5s;
-        }
-
-        .hero-button {
-            animation-delay: 0.7s;
-        }
-
-        .features {
-            animation-delay: 0.9s;
-        }
+        .logo { animation-delay: 0.1s; }
+        .hero-title { animation-delay: 0.3s; }
+        .hero-subtitle { animation-delay: 0.5s; }
+        .hero-button { animation-delay: 0.7s; }
+        .features { animation-delay: 0.9s; }
 
         /* Button styling */
         .btn-primary {
@@ -163,10 +149,7 @@
             opacity: 0;
         }
 
-        .btn-primary:hover::before {
-            opacity: 1;
-        }
-
+        .btn-primary:hover::before { opacity: 1; }
         .btn-primary:hover {
             transform: translateY(-2px);
             box-shadow: 
@@ -193,29 +176,6 @@
             transform: translateY(-4px);
         }
 
-        /* Shimmer effect on load */
-        .shimmer {
-            position: relative;
-            overflow: hidden;
-        }
-
-        .shimmer::after {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: -100%;
-            width: 100%;
-            height: 100%;
-            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.1), transparent);
-            animation: shimmer 2s ease-in-out 0.5s;
-        }
-
-        @keyframes shimmer {
-            0% { left: -100%; }
-            100% { left: 100%; }
-        }
-
-        /* Lock icon animation */
         .lock-icon {
             display: inline-block;
             animation: lockPulse 2s ease-in-out infinite;
@@ -228,31 +188,29 @@
     </style>
 </head>
 <body>
-    <!-- Background layers -->
     <div class="hero-bg"></div>
     <div class="pattern-overlay"></div>
     <div class="orb orb-1"></div>
     <div class="orb orb-2"></div>
 
-    <!-- Main container -->
     <div class="relative z-10 min-h-screen flex flex-col">
-        <!-- Header -->
         <header class="pt-8 pb-4 px-6 md:px-12">
-            <div class="max-w-7xl mx-auto">
-                <div class="fade-in-up logo shimmer">
+            <div class="max-w-7xl mx-auto flex justify-between items-center">
+                <div class="fade-in-up logo">
                     <h1 class="clash-display text-2xl md:text-3xl font-bold tracking-tight">
                         <span class="bg-gradient-to-r from-white via-blue-100 to-cyan-100 bg-clip-text text-transparent">
                             EXCLUSIVE NETWORKS
                         </span>
                     </h1>
                 </div>
+                <div class="fade-in-up logo hidden md:block">
+                    <a href="https://demo-ocimaster.okta.com/signin/register" class="text-blue-200 hover:text-white transition-colors text-sm font-medium">Partner Registration</a>
+                </div>
             </div>
         </header>
 
-        <!-- Hero Section -->
         <main class="flex-1 flex items-center justify-center px-6 md:px-12 py-12">
             <div class="max-w-4xl mx-auto text-center">
-                <!-- Title -->
                 <h2 class="clash-display text-5xl md:text-7xl lg:text-8xl font-bold mb-6 leading-tight fade-in-up hero-title">
                     <span class="block bg-gradient-to-r from-white via-blue-50 to-white bg-clip-text text-transparent">
                         Central Identity
@@ -262,24 +220,30 @@
                     </span>
                 </h2>
 
-                <!-- Subtitle -->
                 <p class="text-xl md:text-2xl text-blue-100 mb-12 max-w-2xl mx-auto leading-relaxed fade-in-up hero-subtitle">
                     <span class="lock-icon">🔒</span> Secure Access for Partners & Customers
                 </p>
 
-                <!-- Sign In Button -->
-                <div class="fade-in-up hero-button mb-16">
-                    <button class="btn-primary bg-blue-600 hover:bg-blue-700 text-white font-semibold text-lg px-16 py-5 rounded-full transition-all duration-300">
-                        <span class="flex items-center justify-center gap-3">
-                            Sign In
-                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M13 7l5 5m0 0l-5 5m5-5H6"/>
-                            </svg>
-                        </span>
-                    </button>
+                <div class="fade-in-up hero-button mb-16 flex flex-col items-center gap-6">
+                    <a href="https://demo-ocimaster.okta.com/home/oidc_client/0oazple1o7fKysIQB697/0oazple1o7fKysIQB697" class="inline-block">
+                        <button class="btn-primary bg-blue-600 hover:bg-blue-700 text-white font-semibold text-lg px-16 py-5 rounded-full transition-all duration-300">
+                            <span class="flex items-center justify-center gap-3">
+                                Sign In
+                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M13 7l5 5m0 0l-5 5m5-5H6"/>
+                                </svg>
+                            </span>
+                        </button>
+                    </a>
+                    
+                    <p class="text-blue-200">
+                        New partner? 
+                        <a href="https://demo-ocimaster.okta.com/signin/register" class="text-cyan-400 hover:text-cyan-300 font-medium underline underline-offset-4 ml-1 transition-colors">
+                            Create an account
+                        </a>
+                    </p>
                 </div>
 
-                <!-- Feature highlights -->
                 <div class="grid grid-cols-1 md:grid-cols-3 gap-6 fade-in-up features">
                     <div class="feature-card rounded-2xl p-6">
                         <div class="text-cyan-400 mb-3">
@@ -314,11 +278,10 @@
             </div>
         </main>
 
-        <!-- Footer -->
         <footer class="py-8 px-6 md:px-12 border-t border-white/10">
             <div class="max-w-7xl mx-auto">
                 <div class="flex flex-col md:flex-row justify-between items-center gap-4 text-sm text-blue-200">
-                    <p>&copy; 2026 Exclusive Networks. All rights reserved.</p>
+                    <p>&copy; 2026 Exclusive Networks. Powered by Okta CIAM.</p>
                     <div class="flex gap-6">
                         <a href="#" class="hover:text-cyan-300 transition-colors">Privacy Policy</a>
                         <a href="#" class="hover:text-cyan-300 transition-colors">Terms of Service</a>
