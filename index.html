@@ -274,16 +274,14 @@
 
                 <!-- Sign In Button -->
                 <div class="fade-in-up hero-button mb-16 flex flex-col items-center gap-6">
-                    <a href="https://demo-ocimaster.okta.com/" class="inline-block">
-                        <button class="btn-primary bg-blue-600 hover:bg-blue-700 text-white font-semibold text-lg px-16 py-5 rounded-full transition-all duration-300">
-                            <span class="flex items-center justify-center gap-3">
-                                Sign In
-                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M13 7l5 5m0 0l-5 5m5-5H6"/>
-                                </svg>
-                            </span>
-                        </button>
-                    </a>
+                    <button onclick="login()" class="btn-primary bg-blue-600 hover:bg-blue-700 text-white font-semibold text-lg px-16 py-5 rounded-full transition-all duration-300 cursor-pointer">
+                        <span class="flex items-center justify-center gap-3">
+                            Sign In
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M13 7l5 5m0 0l-5 5m5-5H6"/>
+                            </svg>
+                        </span>
+                    </button>
                     
                     <p class="text-blue-200 md:hidden">
                         New partner? 
@@ -342,5 +340,19 @@
             </div>
         </footer>
     </div>
+
+    <script>
+        // Okta configuration
+        const OKTA_DOMAIN = 'demo-ocimaster.okta.com';
+        const REDIRECT_URI = window.location.origin + '/dashboard.html';
+        
+        function login() {
+            // Store return URL for after authentication
+            sessionStorage.setItem('oktaRedirect', REDIRECT_URI);
+            
+            // Redirect to Okta login
+            window.location.href = `https://${OKTA_DOMAIN}/?redirectUrl=${encodeURIComponent(REDIRECT_URI)}`;
+        }
+    </script>
 </body>
 </html>
