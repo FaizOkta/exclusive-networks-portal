@@ -1,47 +1,136 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Dashboard - Exclusive Networks</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <style>
-        body { background: #0A1628; color: white; font-family: sans-serif; }
-        .dashboard-card { background: rgba(255, 255, 255, 0.05); border: 1px solid rgba(255, 255, 255, 0.1); }
-    </style>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Exclusive Networks Portal - Dashboard</title>
+
+  <!-- Okta Auth JS -->
+  <script src="https://global.oktacdn.com/okta-auth-js/7.7.0/okta-auth-js.min.js"></script>
+
+  <!-- Tailwind -->
+  <script src="https://cdn.tailwindcss.com"></script>
+
+  <style>
+    body { font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, "Apple Color Emoji","Segoe UI Emoji"; }
+    .mono { font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace; }
+  </style>
 </head>
-<body class="p-12">
-    <div class="max-w-6xl mx-auto">
-        <div class="flex justify-between items-center mb-12">
-            <h1 class="text-3xl font-bold">EXCLUSIVE NETWORKS</h1>
-            <button onclick="logout()" class="text-red-400 border border-red-400/30 px-6 py-2 rounded-full hover:bg-red-400 hover:text-white transition-all">Logout</button>
-        </div>
 
-        <div class="bg-green-500/10 border border-green-500/30 p-4 rounded-xl mb-8 text-center text-green-400">
-            ✓ Authentication Successful: Welcome to the Secure Partner Dashboard
-        </div>
+<body class="bg-slate-950 text-white min-h-screen p-6 md:p-10">
+  <div class="max-w-5xl mx-auto">
 
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-            <div class="dashboard-card p-8 rounded-2xl">
-                <h3 class="text-xl font-bold mb-4">Security Assets</h3>
-                <p class="text-gray-400 text-sm">Access protected playbooks and technical documentation.</p>
-            </div>
-            <div class="dashboard-card p-8 rounded-2xl">
-                <h3 class="text-xl font-bold mb-4">Partner Incentives</h3>
-                <p class="text-gray-400 text-sm">Track your rewards and deal registrations.</p>
-            </div>
-            <div class="dashboard-card p-8 rounded-2xl">
-                <h3 class="text-xl font-bold mb-4">MFA Settings</h3>
-                <p class="text-gray-400 text-sm">Update your biometric and push notification preferences.</p>
-            </div>
-        </div>
+    <div class="flex items-start justify-between gap-6 mb-8">
+      <div>
+        <h1 class="text-3xl md:text-4xl font-bold">Dashboard</h1>
+        <p id="status" class="text-slate-300 mt-2">Loading...</p>
+      </div>
+
+      <div class="flex gap-3">
+        <a href="/" class="px-5 py-3 rounded bg-slate-800 hover:bg-slate-700 inline-block">Home</a>
+        <button id="logoutBtn" class="px-5 py-3 rounded bg-slate-800 hover:bg-slate-700">Logout</button>
+      </div>
     </div>
 
-    <script>
-        function logout() {
-            sessionStorage.clear();
-            window.location.href = "https://demo-ocimaster.okta.com/login/signout?fromURI=" + encodeURIComponent(window.location.origin + "/index.html");
-        }
-    </script>
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      <section class="bg-slate-900/60 border border-slate-800 rounded-xl p-5">
+        <h2 class="text-lg font-semibold mb-3">User Profile</h2>
+        <pre id="profile" class="mono text-xs md:text-sm whitespace-pre-wrap break-words bg-slate-950/60 p-4 rounded-lg overflow-auto min-h-[220px]"></pre>
+      </section>
+
+      <section class="bg-slate-900/60 border border-slate-800 rounded-xl p-5">
+        <h2 class="text-lg font-semibold mb-3">Tokens (demo)</h2>
+        <pre id="tokens" class="mono text-xs md:text-sm whitespace-pre-wrap break-words bg-slate-950/60 p-4 rounded-lg overflow-auto min-h-[220px]"></pre>
+        <p class="text-xs text-slate-400 mt-3">
+          Note: Tokens are shown for demo purposes only. In production, avoid rendering tokens in the UI.
+        </p>
+      </section>
+    </div>
+
+    <section class="mt-8 bg-slate-900/60 border border-slate-800 rounded-xl p-5">
+      <h2 class="text-lg font-semibold mb-2">What this proves</h2>
+      <ul class="list-disc pl-6 text-slate-300 space-y-1">
+        <li>Centralised authentication using OIDC + PKCE (SPA)</li>
+        <li>Consistent user identity (profile + claims) across apps</li>
+        <li>Foundation for MFA policies and audit logging in Okta</li>
+      </ul>
+    </section>
+  </div>
+
+  <script>
+    /**
+     * ===========================
+     * OKTA SPA CONFIG (EDIT ME)
+     * ===========================
+     * Must match your Okta app configuration.
+     */
+    const OKTA_DOMAIN = "https://demo-ocimaster.okta.com";
+    const CLIENT_ID = "0oazpnnecis3YdhQM697";
+
+    const BASE_URL = "https://exclusive-networks-portal.vercel.app";
+    const REDIRECT_URI = `${BASE_URL}/dashboard.html`;
+
+    const ISSUER = `${OKTA_DOMAIN}/oauth2/default`;
+
+    const authClient = new OktaAuth({
+      issuer: ISSUER,
+      clientId: CLIENT_ID,
+      redirectUri: REDIRECT_URI,
+      scopes: ["openid", "profile", "email", "groups"],
+    });
+
+    function safeStringify(obj) {
+      return JSON.stringify(obj, (k, v) => {
+        // Avoid huge base64 blobs if any appear
+        if (typeof v === "string" && v.length > 2000) return v.slice(0, 2000) + "…(truncated)";
+        return v;
+      }, 2);
+    }
+
+    async function init() {
+      // Handle the redirect callback (code exchange happens here)
+      if (authClient.isLoginRedirect()) {
+        await authClient.handleRedirect();
+        // Clean the URL
+        window.history.replaceState({}, document.title, "/dashboard.html");
+      }
+
+      const isAuth = await authClient.isAuthenticated();
+      if (!isAuth) {
+        document.getElementById("status").textContent = "Not logged in. Redirecting to sign-in...";
+        await authClient.signInWithRedirect();
+        return;
+      }
+
+      document.getElementById("status").textContent = "Logged in via Okta Customer Identity (OIDC + PKCE).";
+
+      // User profile from /userinfo
+      const user = await authClient.getUser();
+      document.getElementById("profile").textContent = safeStringify(user);
+
+      // Tokens from token manager
+      const tokens = authClient.tokenManager.getTokensSync();
+      document.getElementById("tokens").textContent = safeStringify({
+        idToken: tokens.idToken ? {
+          claims: tokens.idToken.claims,
+          expiresAt: tokens.idToken.expiresAt
+        } : null,
+        accessToken: tokens.accessToken ? {
+          expiresAt: tokens.accessToken.expiresAt,
+          scopes: tokens.accessToken.scopes
+        } : null
+      });
+    }
+
+    document.getElementById("logoutBtn").addEventListener("click", async () => {
+      // Clears local tokens + ends Okta session and returns to homepage
+      await authClient.signOut({ postLogoutRedirectUri: `${BASE_URL}/` });
+    });
+
+    init().catch(err => {
+      document.getElementById("status").textContent = "Error: " + err.message;
+      console.error(err);
+    });
+  </script>
 </body>
 </html>
