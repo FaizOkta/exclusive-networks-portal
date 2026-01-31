@@ -11,37 +11,41 @@
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body { font-family: 'Open Sans', Arial, sans-serif; background-color: #0a0e27; color: #333; }
 
+        /* Branding & Navigation */
         .top-header { background-color: #0a0e27; padding: 15px 0; border-bottom: 1px solid rgba(255, 255, 255, 0.1); }
         .top-header-content { max-width: 1400px; margin: 0 auto; padding: 0 40px; display: flex; justify-content: space-between; align-items: center; }
-        
         .logo-section { display: flex; align-items: center; gap: 15px; }
         .logo-x { font-size: 48px; font-weight: 700; background: linear-gradient(135deg, #a855f7 0%, #ec4899 50%, #f97316 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; line-height: 1; }
         .logo-text { color: white; font-size: 28px; font-weight: 700; text-transform: uppercase; letter-spacing: -0.5px; line-height: 1.2; }
         .logo-text span { display: block; }
-
         .contact-link { color: white; text-decoration: none; font-size: 14px; display: flex; align-items: center; gap: 10px; }
-        .magenta-bar { background: linear-gradient(90deg, #c026d3 0%, #db2777 100%); padding: 12px 0; }
+        
+        .magenta-bar { background: linear-gradient(90deg, #c026d3 0%, #db2777 100%); padding: 12px 0; position: relative; }
         .magenta-bar-content { max-width: 1400px; margin: 0 auto; padding: 0 40px; text-align: right; }
-
-        .your-account { color: white; font-size: 16px; font-weight: 600; display: inline-flex; align-items: center; gap: 8px; cursor: pointer; padding: 8px 15px; border-radius: 4px; }
+        
+        .your-account { color: white; font-size: 16px; font-weight: 600; display: inline-flex; align-items: center; gap: 8px; cursor: pointer; padding: 8px 15px; border-radius: 4px; transition: background-color 0.3s; }
+        .your-account:hover { background-color: rgba(255, 255, 255, 0.1); }
+        
         .account-dropdown { position: relative; display: inline-block; }
         .dropdown-menu { position: absolute; top: 100%; right: 0; background: white; min-width: 200px; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15); border-radius: 4px; margin-top: 8px; opacity: 0; visibility: hidden; transform: translateY(-10px); transition: all 0.3s ease; z-index: 1000; }
         .account-dropdown:hover .dropdown-menu { opacity: 1; visibility: visible; transform: translateY(0); }
-        .dropdown-menu a { display: block; padding: 12px 20px; color: #333; text-decoration: none; font-size: 14px; text-align: left; }
+        .dropdown-menu a { display: block; padding: 12px 20px; color: #333; text-decoration: none; transition: background-color 0.3s; font-size: 14px; text-align: left; }
         .dropdown-menu a:hover { background-color: #f5f5f5; color: #c026d3; }
 
-        .welcome-message { background: linear-gradient(135deg, #22c55e 0%, #16a34a 100%); color: white; padding: 15px; text-align: center; font-size: 16px; font-weight: 600; display: none; }
+        /* Notification & Content */
+        .welcome-message { background: linear-gradient(135deg, #22c55e 0%, #16a34a 100%); color: white; padding: 15px; text-align: center; font-size: 16px; font-weight: 600; display: none; border-bottom: 2px solid #15803d; }
         .welcome-message.show { display: block; }
 
         .main-content { background-color: #f5f5f5; min-height: calc(100vh - 200px); padding: 40px 0; }
         .content-wrapper { max-width: 1400px; margin: 0 auto; padding: 0 40px; }
-        .page-title { font-size: 42px; font-weight: 700; color: #1a1a1a; margin-bottom: 20px; }
+        .breadcrumb { margin-bottom: 30px; font-size: 14px; color: #666; }
+        .page-title { font-size: 42px; font-weight: 700; color: #1a1a1a; margin-bottom: 20px; line-height: 1.2; }
         .highlight { color: #c026d3; }
         .page-description { color: #666; line-height: 1.8; margin-bottom: 40px; font-size: 15px; max-width: 900px; }
         
-        .banner-image-container { margin-top: 40px; border-radius: 8px; overflow: hidden; box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15); }
+        .banner-image-container { margin-top: 40px; border-radius: 8px; overflow: hidden; box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15); background: white; }
         .banner-image-container img { width: 100%; height: auto; display: block; }
-        
+
         .footer { background-color: #0a0e27; color: white; padding: 30px 0; margin-top: 60px; text-align: center; }
         .footer a { color: #ec4899; text-decoration: none; }
     </style>
@@ -57,7 +61,7 @@
         </div>
     </div>
 
-    <div class="welcome-message" id="welcomeMessage">✓ Successfully authenticated via Okta! Welcome back.</div>
+    <div class="welcome-message" id="welcomeMessage">✓ Successfully authenticated! Welcome to your secure dashboard.</div>
 
     <div class="magenta-bar">
         <div class="magenta-bar-content">
@@ -74,11 +78,11 @@
 
     <div class="main-content">
         <div class="content-wrapper">
-            <h1 class="page-title" id="mainTitle">Login to your <span class="highlight">Customer Portal.</span></h1>
-            <p class="page-description" id="mainDesc">
-                On this customer portal you can access services, features and information. 
-                It contains Order tracking, Available stocks, Price lists, and Invoices. 
-                Access is restricted to authorized partners using secure credentials.
+            <div class="breadcrumb">Home / <span class="current">Customer Portal</span></div>
+            <h1 class="page-title" id="displayTitle">Login to your <span class="highlight">Customer Portal.</span></h1>
+            <p class="page-description" id="displayDesc">
+                On this customer portal you can access services/features & information you may need. 
+                It contains features such as Order tracking, Available stocks, Price list, Invoices.
             </p>
             <div class="banner-image-container">
                 <img src="https://www.exclusive-networks.com/usa/wp-content/uploads/sites/48/2020/03/Exclusive-Networks-Logo-Horizontal-White.png" alt="Exclusive Networks" style="background: #0a0e27; padding: 40px;">
@@ -88,40 +92,44 @@
 
     <div class="footer">
         <div class="footer-content">
-            <p>&copy; 2026 Exclusive Networks. Securely Powered by Okta.</p>
+            <p>&copy; 2026 Exclusive Networks. Securely Powered by Okta CIAM.</p>
         </div>
     </div>
 
     <script>
-        // --- CONFIGURATION ---
-        const OKTA_DOMAIN = 'demo-ocimaster.okta.com';
+        // --- 1. CONFIGURATION ---
+        const OKTA_DOMAIN = 'demo-ocimaster.okta.com'; 
+        // Replace this with the EXACT Embed Link from the bottom of your Okta Application page
         const EMBED_LINK = 'https://demo-ocimaster.okta.com/home/oidc_client/0oazpnnecis3YdhQM697/aln177a159h7Zf52X0g8';
         const REDIRECT_URI = window.location.origin + window.location.pathname;
 
+        // --- 2. AUTHENTICATION LOGIC ---
         function checkAuth() {
             const urlParams = new URLSearchParams(window.location.search);
-            // Look for the token in the hash (Implicit) or code (PKCE)
-            const isAuthenticated = sessionStorage.getItem('okta_auth') === 'true' || 
-                                  window.location.hash.includes('id_token') || 
-                                  urlParams.has('code');
+            // Implicit flow usually returns tokens in the URL hash (#)
+            const hasToken = window.location.hash.includes('id_token') || urlParams.has('code');
+            const isLocalSession = sessionStorage.getItem('authenticated') === 'true';
 
-            if (isAuthenticated) {
-                sessionStorage.setItem('okta_auth', 'true');
-                document.getElementById('welcomeMessage').classList.add('show');
-                document.getElementById('mainTitle').innerHTML = 'Welcome to the <span class="highlight">Partner Ecosystem.</span>';
-                document.getElementById('mainDesc').innerText = 'You have successfully bypassed the perimeter. You now have access to privileged pricing and real-time inventory.';
+            if (hasToken || isLocalSession) {
+                sessionStorage.setItem('authenticated', 'true');
                 
-                // Clean up URL for professional look
+                // Visual Success state
+                document.getElementById('welcomeMessage').classList.add('show');
+                document.getElementById('displayTitle').innerHTML = 'Welcome to your <span class="highlight">Dashboard.</span>';
+                document.getElementById('displayDesc').innerText = 'Accessing real-time stock levels, tracking pending orders, and viewing historical invoices.';
+                
+                // Clean up the URL (remove tokens/codes) for a clean look
                 window.history.replaceState({}, document.title, window.location.pathname);
+                
                 updateMenu(true);
             } else {
                 updateMenu(false);
             }
         }
 
-        function updateMenu(isAuth) {
+        function updateMenu(authenticated) {
             const menu = document.getElementById('dropdownMenu');
-            if (isAuth) {
+            if (authenticated) {
                 menu.innerHTML = `<a href="#" onclick="logout(event)">Logout</a>`;
             } else {
                 menu.innerHTML = `<a href="${EMBED_LINK}">Log in</a>
@@ -132,9 +140,11 @@
         function logout(event) {
             event.preventDefault();
             sessionStorage.clear();
+            // Redirect to Okta logout endpoint, then back to your homepage
             window.location.href = `https://${OKTA_DOMAIN}/login/signout?fromURI=${encodeURIComponent(REDIRECT_URI)}`;
         }
 
+        // Initialize on load
         window.onload = checkAuth;
     </script>
 </body>
