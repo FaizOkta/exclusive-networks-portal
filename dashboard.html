@@ -5,16 +5,8 @@
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>Exclusive Networks Portal - Dashboard</title>
 
-  <!-- Okta Auth JS -->
   <script src="https://global.oktacdn.com/okta-auth-js/7.7.0/okta-auth-js.min.js"></script>
-
-  <!-- Tailwind -->
   <script src="https://cdn.tailwindcss.com"></script>
-
-  <style>
-    body { font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, "Apple Color Emoji","Segoe UI Emoji"; }
-    .mono { font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace; }
-  </style>
 </head>
 
 <body class="bg-slate-950 text-white min-h-screen p-6 md:p-10">
@@ -32,104 +24,106 @@
       </div>
     </div>
 
-    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+    <div id="notLoggedIn" class="hidden bg-slate-900/60 border border-slate-800 rounded-xl p-5">
+      <h2 class="text-lg font-semibold mb-2">You’re not logged in</h2>
+      <p class="text-slate-300 mb-4">Go back to Home and click Sign In.</p>
+      <a href="/" class="inline-block px-5 py-3 rounded bg-blue-600 hover:bg-blue-700">Go to Home</a>
+    </div>
+
+    <div id="content" class="hidden grid grid-cols-1 lg:grid-cols-2 gap-6">
       <section class="bg-slate-900/60 border border-slate-800 rounded-xl p-5">
         <h2 class="text-lg font-semibold mb-3">User Profile</h2>
-        <pre id="profile" class="mono text-xs md:text-sm whitespace-pre-wrap break-words bg-slate-950/60 p-4 rounded-lg overflow-auto min-h-[220px]"></pre>
+        <pre id="profile" class="text-xs md:text-sm whitespace-pre-wrap break-words bg-slate-950/60 p-4 rounded-lg overflow-auto min-h-[220px]"></pre>
       </section>
 
       <section class="bg-slate-900/60 border border-slate-800 rounded-xl p-5">
         <h2 class="text-lg font-semibold mb-3">Tokens (demo)</h2>
-        <pre id="tokens" class="mono text-xs md:text-sm whitespace-pre-wrap break-words bg-slate-950/60 p-4 rounded-lg overflow-auto min-h-[220px]"></pre>
+        <pre id="tokens" class="text-xs md:text-sm whitespace-pre-wrap break-words bg-slate-950/60 p-4 rounded-lg overflow-auto min-h-[220px]"></pre>
         <p class="text-xs text-slate-400 mt-3">
-          Note: Tokens are shown for demo purposes only. In production, avoid rendering tokens in the UI.
+          Demo only. Don’t render tokens in production UIs.
         </p>
       </section>
     </div>
-
-    <section class="mt-8 bg-slate-900/60 border border-slate-800 rounded-xl p-5">
-      <h2 class="text-lg font-semibold mb-2">What this proves</h2>
-      <ul class="list-disc pl-6 text-slate-300 space-y-1">
-        <li>Centralised authentication using OIDC + PKCE (SPA)</li>
-        <li>Consistent user identity (profile + claims) across apps</li>
-        <li>Foundation for MFA policies and audit logging in Okta</li>
-      </ul>
-    </section>
   </div>
 
   <script>
-    /**
-     * ===========================
-     * OKTA SPA CONFIG (EDIT ME)
-     * ===========================
-     * Must match your Okta app configuration.
-     */
     const OKTA_DOMAIN = "https://demo-ocimaster.okta.com";
     const CLIENT_ID = "0oazpnnecis3YdhQM697";
-
     const BASE_URL = "https://exclusive-networks-portal.vercel.app";
     const REDIRECT_URI = `${BASE_URL}/dashboard.html`;
-
     const ISSUER = `${OKTA_DOMAIN}/oauth2/default`;
 
     const authClient = new OktaAuth({
       issuer: ISSUER,
       clientId: CLIENT_ID,
       redirectUri: REDIRECT_URI,
-      scopes: ["openid", "profile", "email", "groups"],
+      scopes: ["openid", "profile", "email"],
+      // IMPORTANT: keep the PKCE transaction in sessionStorage to avoid stale/concurrent issues
+      transactionManager: {
+        storage: "sessionStorage"
+      },
+      tokenManager: {
+        storage: "localStorage"
+      }
     });
 
     function safeStringify(obj) {
       return JSON.stringify(obj, (k, v) => {
-        // Avoid huge base64 blobs if any appear
         if (typeof v === "string" && v.length > 2000) return v.slice(0, 2000) + "…(truncated)";
         return v;
       }, 2);
     }
 
     async function init() {
-      // Handle the redirect callback (code exchange happens here)
-      if (authClient.isLoginRedirect()) {
+      // Guard: prevent double-handling the callback
+      if (sessionStorage.getItem("en_pkce_handling") === "1") {
+        // If we already handled, continue normally
+      } else if (authClient.isLoginRedirect()) {
+        sessionStorage.setItem("en_pkce_handling", "1");
         await authClient.handleRedirect();
-        // Clean the URL
+        // Clean URL after code exchange
         window.history.replaceState({}, document.title, "/dashboard.html");
+        sessionStorage.removeItem("en_pkce_handling");
       }
 
       const isAuth = await authClient.isAuthenticated();
+
       if (!isAuth) {
-        document.getElementById("status").textContent = "Not logged in. Redirecting to sign-in...";
-        await authClient.signInWithRedirect();
+        document.getElementById("status").textContent = "Not logged in.";
+        document.getElementById("notLoggedIn").classList.remove("hidden");
         return;
       }
 
-      document.getElementById("status").textContent = "Logged in via Okta Customer Identity (OIDC + PKCE).";
+      document.getElementById("status").textContent = "Logged in via Okta (OIDC + PKCE).";
+      document.getElementById("content").classList.remove("hidden");
 
-      // User profile from /userinfo
       const user = await authClient.getUser();
       document.getElementById("profile").textContent = safeStringify(user);
 
-      // Tokens from token manager
       const tokens = authClient.tokenManager.getTokensSync();
       document.getElementById("tokens").textContent = safeStringify({
-        idToken: tokens.idToken ? {
-          claims: tokens.idToken.claims,
-          expiresAt: tokens.idToken.expiresAt
-        } : null,
-        accessToken: tokens.accessToken ? {
-          expiresAt: tokens.accessToken.expiresAt,
-          scopes: tokens.accessToken.scopes
-        } : null
+        idToken: tokens.idToken ? { claims: tokens.idToken.claims, expiresAt: tokens.idToken.expiresAt } : null,
+        accessToken: tokens.accessToken ? { expiresAt: tokens.accessToken.expiresAt, scopes: tokens.accessToken.scopes } : null
       });
     }
 
     document.getElementById("logoutBtn").addEventListener("click", async () => {
-      // Clears local tokens + ends Okta session and returns to homepage
+      // Clear local tokens + end Okta session
+      await authClient.tokenManager.clear();
       await authClient.signOut({ postLogoutRedirectUri: `${BASE_URL}/` });
     });
 
-    init().catch(err => {
-      document.getElementById("status").textContent = "Error: " + err.message;
+    init().catch(async (err) => {
       console.error(err);
+
+      // If something went wrong with the PKCE transaction, clean it up so the next attempt works.
+      try {
+        authClient.transactionManager.clear();
+      } catch (e) {}
+
+      document.getElementById("status").textContent =
+        "Auth error: " + err.message + " (Try Home → Sign In again)";
+      document.getElementById("notLoggedIn").classList.remove("hidden");
     });
   </script>
 </body>
