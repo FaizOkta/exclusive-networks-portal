@@ -162,9 +162,7 @@
         const CLIENT_ID = "0oazpnnecis3YdhQM697";
         const ISSUER = `https://${OKTA_DOMAIN}/oauth2/default`;
         
-        // THIS MUST MATCH YOUR OKTA APP REDIRECT URI EXACTLY
-        // For local testing: window.location.origin (e.g., http://localhost:8000)
-        // For production: https://exclusive-networks-portal.vercel.app/
+        // MUST MATCH YOUR OKTA APP REDIRECT URI
         const REDIRECT_URI = "https://exclusive-networks-portal.vercel.app/";
 
         // Initialize Okta Auth Client
@@ -174,6 +172,7 @@
             redirectUri: REDIRECT_URI,
             scopes: ['openid', 'profile', 'email'],
             pkce: true,
+            responseType: 'code',
             tokenManager: {
                 storage: 'localStorage'
             }
@@ -218,18 +217,23 @@
             document.getElementById('loginLink').addEventListener('click', handleLogin);
         }
 
-        // Handle login
+        // Handle login - EXPLICIT APPROACH
         async function handleLogin(e) {
             e.preventDefault();
             
             try {
-                // This will redirect to Okta's login page
+                console.log('Initiating login...');
+                
+                // Use the SDK's built-in method with explicit options
                 await authClient.token.getWithRedirect({
-                    scopes: ['openid', 'profile', 'email']
+                    responseType: 'code',
+                    scopes: ['openid', 'profile', 'email'],
+                    // Force prompt to ensure we go through login
+                    prompt: 'login'
                 });
             } catch (error) {
                 console.error('Login error:', error);
-                alert('Login failed. Please try again.');
+                alert('Login failed: ' + error.message);
             }
         }
 
@@ -238,19 +242,27 @@
             e.preventDefault();
             
             try {
+                console.log('Logging out...');
                 await authClient.signOut({
                     postLogoutRedirectUri: REDIRECT_URI
                 });
             } catch (error) {
                 console.error('Logout error:', error);
+                // Force logout by clearing tokens and reloading
+                authClient.tokenManager.clear();
+                window.location.href = REDIRECT_URI;
             }
         }
 
         // Initialize the application
         async function init() {
             try {
+                console.log('Initializing app...');
+                
                 // Check if we're coming back from Okta redirect
                 if (authClient.isLoginRedirect()) {
+                    console.log('Handling login redirect...');
+                    
                     // Handle the callback
                     await authClient.handleLoginRedirect();
                     
@@ -263,16 +275,26 @@
 
                 // Check if user is authenticated
                 const isAuthenticated = await authClient.isAuthenticated();
+                console.log('Is authenticated:', isAuthenticated);
 
                 if (isAuthenticated) {
                     // Get user info
                     const userInfo = await authClient.getUser();
+                    console.log('User info:', userInfo);
                     setLoggedInUI(userInfo);
                 } else {
                     setLoggedOutUI();
                 }
             } catch (error) {
                 console.error('Initialization error:', error);
+                
+                // Clear any stuck auth state
+                try {
+                    await authClient.tokenManager.clear();
+                } catch (e) {
+                    console.error('Error clearing tokens:', e);
+                }
+                
                 setLoggedOutUI();
             }
         }
