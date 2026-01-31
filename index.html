@@ -1,470 +1,84 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Customer Portal - Exclusive Networks</title>
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Open+Sans:wght@400;600;700&display=swap" rel="stylesheet">
-    <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
+<script src="https://global.oktacdn.com/okta-auth-js/7.7.0/okta-auth-js.min.js"></script>
+<script>
+  /****************************************************
+   * OKTA CONFIG – UPDATE THESE TWO VALUES
+   ****************************************************/
+  const OKTA_DOMAIN = "https://demo-ocimaster.okta.com";
+  const CLIENT_ID   = "0oazpnnecis3YdhQM697";
 
-        body {
-            font-family: 'Open Sans', Arial, sans-serif;
-            background-color: #0a0e27;
-            color: #333;
-        }
+  const REDIRECT_URI = window.location.origin + window.location.pathname;
+  const ISSUER = `${OKTA_DOMAIN}/oauth2/default`;
 
-        /* Top Header */
-        .top-header {
-            background-color: #0a0e27;
-            padding: 15px 0;
-            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-        }
+  const authClient = new OktaAuth({
+    issuer: ISSUER,
+    clientId: CLIENT_ID,
+    redirectUri: REDIRECT_URI,
+    scopes: ["openid", "profile", "email"],
+    transactionManager: { storage: "sessionStorage" },
+    tokenManager: { storage: "localStorage" }
+  });
 
-        .top-header-content {
-            max-width: 1400px;
-            margin: 0 auto;
-            padding: 0 40px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
+  /****************************************************
+   * UI HELPERS
+   ****************************************************/
+  function showWelcome() {
+    const banner = document.getElementById("welcomeMessage");
+    banner.classList.add("show");
+    setTimeout(() => banner.classList.remove("show"), 5000);
+  }
 
-        .logo-section {
-            display: flex;
-            align-items: center;
-            gap: 15px;
-        }
+  function updateDropdownMenu(isAuthenticated) {
+    const dropdownMenu = document.getElementById("dropdownMenu");
 
-        .logo-icon {
-            display: flex;
-            align-items: center;
-            gap: 5px;
-        }
+    if (isAuthenticated) {
+      dropdownMenu.innerHTML = `
+        <a href="#" onclick="logout(event)">Logout</a>
+      `;
+    } else {
+      dropdownMenu.innerHTML = `
+        <a href="#" onclick="login(event)">Log in</a>
+      `;
+    }
+  }
 
-        .logo-x {
-            font-size: 48px;
-            font-weight: 700;
-            background: linear-gradient(135deg, #a855f7 0%, #ec4899 50%, #f97316 100%);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            background-clip: text;
-            line-height: 1;
-        }
+  /****************************************************
+   * AUTH FLOW
+   ****************************************************/
+  async function login(event) {
+    event.preventDefault();
+    await authClient.signInWithRedirect({
+      extraParams: { prompt: "login" }
+    });
+  }
 
-        .logo-text {
-            color: white;
-            font-size: 28px;
-            font-weight: 700;
-            text-transform: uppercase;
-            letter-spacing: -0.5px;
-            line-height: 1.2;
-        }
+  async function logout(event) {
+    event.preventDefault();
+    await authClient.tokenManager.clear();
+    await authClient.signOut({
+      postLogoutRedirectUri: window.location.origin + window.location.pathname
+    });
+  }
 
-        .logo-text span {
-            display: block;
-            font-size: 28px;
-        }
+  async function init() {
+    // Handle redirect back from Okta
+    if (authClient.isLoginRedirect()) {
+      await authClient.handleRedirect();
+      window.history.replaceState({}, document.title, window.location.pathname);
+      showWelcome();
+    }
 
-        .contact-link {
-            color: white;
-            text-decoration: none;
-            font-size: 14px;
-            display: flex;
-            align-items: center;
-            gap: 10px;
-        }
+    const isAuthenticated = await authClient.isAuthenticated();
+    updateDropdownMenu(isAuthenticated);
 
-        .contact-link:hover {
-            color: #ec4899;
-        }
+    // Optional: expose user info later if you want
+    // if (isAuthenticated) {
+    //   const user = await authClient.getUser();
+    //   console.log("Logged in user:", user);
+    // }
+  }
 
-        /* Magenta Bar with Dropdown */
-        .magenta-bar {
-            background: linear-gradient(90deg, #c026d3 0%, #db2777 100%);
-            padding: 12px 0;
-            position: relative;
-        }
-
-        .magenta-bar-content {
-            max-width: 1400px;
-            margin: 0 auto;
-            padding: 0 40px;
-            text-align: right;
-        }
-
-        .account-dropdown {
-            position: relative;
-            display: inline-block;
-        }
-
-        .your-account {
-            color: white;
-            font-size: 16px;
-            font-weight: 600;
-            display: inline-flex;
-            align-items: center;
-            gap: 8px;
-            cursor: pointer;
-            padding: 8px 15px;
-            border-radius: 4px;
-            transition: background-color 0.3s;
-        }
-
-        .your-account:hover {
-            background-color: rgba(255, 255, 255, 0.1);
-        }
-
-        .dropdown-menu {
-            position: absolute;
-            top: 100%;
-            right: 0;
-            background: white;
-            min-width: 200px;
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-            border-radius: 4px;
-            margin-top: 8px;
-            opacity: 0;
-            visibility: hidden;
-            transform: translateY(-10px);
-            transition: all 0.3s ease;
-            z-index: 1000;
-        }
-
-        .account-dropdown:hover .dropdown-menu {
-            opacity: 1;
-            visibility: visible;
-            transform: translateY(0);
-        }
-
-        .dropdown-menu a {
-            display: block;
-            padding: 12px 20px;
-            color: #333;
-            text-decoration: none;
-            transition: background-color 0.3s;
-            font-size: 14px;
-        }
-
-        .dropdown-menu a:hover {
-            background-color: #f5f5f5;
-            color: #c026d3;
-        }
-
-        .dropdown-menu a:first-child {
-            border-radius: 4px 4px 0 0;
-        }
-
-        .dropdown-menu a:last-child {
-            border-radius: 0 0 4px 4px;
-        }
-
-        /* Welcome Message */
-        .welcome-message {
-            background: linear-gradient(135deg, #a855f7 0%, #ec4899 100%);
-            color: white;
-            padding: 15px;
-            text-align: center;
-            font-size: 16px;
-            font-weight: 600;
-            display: none;
-        }
-
-        .welcome-message.show {
-            display: block;
-        }
-
-        /* Main Content */
-        .main-content {
-            background-color: #f5f5f5;
-            min-height: calc(100vh - 200px);
-            padding: 40px 0;
-        }
-
-        .content-wrapper {
-            max-width: 1400px;
-            margin: 0 auto;
-            padding: 0 40px;
-        }
-
-        /* Breadcrumb */
-        .breadcrumb {
-            margin-bottom: 30px;
-            font-size: 14px;
-            color: #666;
-        }
-
-        .breadcrumb a {
-            color: #666;
-            text-decoration: none;
-        }
-
-        .breadcrumb a:hover {
-            color: #c026d3;
-        }
-
-        .breadcrumb .current {
-            color: #c026d3;
-            font-weight: 600;
-        }
-
-        /* Page Title */
-        .page-title {
-            font-size: 42px;
-            font-weight: 700;
-            color: #1a1a1a;
-            margin-bottom: 20px;
-            line-height: 1.2;
-        }
-
-        .page-title .highlight {
-            color: #c026d3;
-        }
-
-        .page-description {
-            color: #666;
-            line-height: 1.8;
-            margin-bottom: 40px;
-            font-size: 15px;
-            max-width: 900px;
-        }
-
-        /* Banner Image */
-        .banner-image-container {
-            margin-top: 40px;
-            border-radius: 8px;
-            overflow: hidden;
-            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
-        }
-
-        .banner-image-container img {
-            width: 100%;
-            height: auto;
-            display: block;
-        }
-
-        /* Footer */
-        .footer {
-            background-color: #0a0e27;
-            color: white;
-            padding: 30px 0;
-            margin-top: 60px;
-        }
-
-        .footer-content {
-            max-width: 1400px;
-            margin: 0 auto;
-            padding: 0 40px;
-            text-align: center;
-        }
-
-        .footer a {
-            color: #ec4899;
-            text-decoration: none;
-        }
-
-        .footer a:hover {
-            text-decoration: underline;
-        }
-
-        /* Responsive */
-        @media (max-width: 768px) {
-            .top-header-content,
-            .magenta-bar-content,
-            .content-wrapper {
-                padding: 0 20px;
-            }
-
-            .logo-text {
-                font-size: 20px;
-            }
-
-            .logo-text span {
-                font-size: 20px;
-            }
-
-            .page-title {
-                font-size: 32px;
-            }
-
-            .dropdown-menu {
-                right: -20px;
-            }
-        }
-    </style>
-</head>
-<body>
-    <!-- Top Header -->
-    <div class="top-header">
-        <div class="top-header-content">
-            <div class="logo-section">
-                <div class="logo-icon">
-                    <span class="logo-x">✕</span>
-                </div>
-                <div class="logo-text">
-                    <span>EXCLUSIVE</span>
-                    <span>ACCESS</span>
-                </div>
-            </div>
-            <div>
-                <a href="https://www.exclusive-networks.com/usa/contact-local/" class="contact-link">
-                    Contact us
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <path d="M9 5l7 7-7 7"/>
-                    </svg>
-                </a>
-            </div>
-        </div>
-    </div>
-
-    <!-- Welcome Message (shown when logged in) -->
-    <div class="welcome-message" id="welcomeMessage">
-        ✓ Successfully authenticated! Welcome back.
-    </div>
-
-    <!-- Magenta Bar with Dropdown -->
-    <div class="magenta-bar">
-        <div class="magenta-bar-content">
-            <div class="account-dropdown">
-                <div class="your-account">
-                    Your Account
-                    <svg width="20" height="20" viewBox="0 0 24 24" fill="white">
-                        <path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/>
-                    </svg>
-                </div>
-                <div class="dropdown-menu" id="dropdownMenu">
-                    <!-- This will be populated by JavaScript based on auth state -->
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- Main Content -->
-    <div class="main-content">
-        <div class="content-wrapper">
-            <!-- Breadcrumb -->
-            <div class="breadcrumb">
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" style="display: inline; vertical-align: middle;">
-                    <path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/>
-                </svg>
-                <a href="#">Home</a> / <span class="current">Customer Portal</span>
-            </div>
-
-            <!-- Page Title and Description -->
-            <h1 class="page-title">Login to your <span class="highlight">Customer Portal.</span></h1>
-            <p class="page-description">
-                On this customer portal you can access services/features & information you may need. 
-                It contains features such as Order tracking, Available stocks, Price list, Invoices. 
-                This customer portal is a digital sharing mechanism and information center between a 
-                company or organization and its customers and can be accessed with a sign in credentials.
-            </p>
-
-            <!-- Banner Image -->
-            <div class="banner-image-container">
-                <img src="/mnt/user-data/uploads/Screenshot_2026-01-31_at_21_19_07.png" alt="Fortinet Engage Preferred Services Partner - Proud To Be a Network Security Partner">
-            </div>
-        </div>
-    </div>
-
-    <!-- Footer -->
-    <div class="footer">
-        <div class="footer-content">
-            <p>&copy; 2026 Exclusive Networks. All rights reserved.</p>
-            <p style="margin-top: 10px;">
-                <a href="#">Privacy Policy</a> | 
-                <a href="#">Terms of Service</a> | 
-                <a href="https://www.exclusive-networks.com/usa/contact-local/">Support</a>
-            </p>
-        </div>
-    </div>
-
-    <script>
-        // Okta configuration - UPDATE WITH YOUR OKTA DOMAIN
-        const OKTA_DOMAIN = 'YOUR-OKTA-DOMAIN.okta.com'; // e.g., 'demo-ocimaster.okta.com'
-        const CURRENT_PAGE_URL = window.location.origin + window.location.pathname;
-
-        // Check authentication state on page load
-        function checkAuthState() {
-            const urlParams = new URLSearchParams(window.location.search);
-            const isAuthenticated = sessionStorage.getItem('authenticated') === 'true';
-            const hasOktaCode = urlParams.has('code'); // Okta returns with a 'code' parameter
-            
-            // If Okta redirected back with a code, mark as authenticated
-            if (hasOktaCode) {
-                sessionStorage.setItem('authenticated', 'true');
-                // Clean up URL
-                window.history.replaceState({}, document.title, window.location.pathname);
-                // Show welcome message
-                document.getElementById('welcomeMessage').classList.add('show');
-                setTimeout(() => {
-                    document.getElementById('welcomeMessage').classList.remove('show');
-                }, 5000);
-            }
-            
-            updateDropdownMenu(isAuthenticated || hasOktaCode);
-        }
-
-        // Update dropdown menu based on auth state
-        function updateDropdownMenu(isAuthenticated) {
-            const dropdownMenu = document.getElementById('dropdownMenu');
-            
-            if (isAuthenticated) {
-                // Show Logout option
-                dropdownMenu.innerHTML = '<a href="#" onclick="logout(event)">Logout</a>';
-            } else {
-                // Show Log in option
-                dropdownMenu.innerHTML = '<a href="#" onclick="login(event)">Log in</a>';
-            }
-        }
-
-        // Login function
-        function login(event) {
-            event.preventDefault();
-            
-            // Store the current page URL to return after login
-            sessionStorage.setItem('returnUrl', CURRENT_PAGE_URL);
-            
-            // Redirect to Okta login
-            // OPTION 1: Simple redirect to Okta
-            window.location.href = `https://${OKTA_DOMAIN}/?fromURI=${encodeURIComponent(CURRENT_PAGE_URL)}`;
-            
-            // OPTION 2: OAuth flow (uncomment and configure if using OAuth)
-            /*
-            const CLIENT_ID = 'YOUR_CLIENT_ID';
-            const REDIRECT_URI = encodeURIComponent(CURRENT_PAGE_URL);
-            const STATE = Math.random().toString(36).substring(7);
-            sessionStorage.setItem('oauthState', STATE);
-            
-            window.location.href = `https://${OKTA_DOMAIN}/oauth2/v1/authorize?` +
-                `client_id=${CLIENT_ID}&` +
-                `response_type=code&` +
-                `scope=openid%20profile%20email&` +
-                `redirect_uri=${REDIRECT_URI}&` +
-                `state=${STATE}`;
-            */
-        }
-
-        // Logout function
-        function logout(event) {
-            event.preventDefault();
-            
-            // Clear authentication
-            sessionStorage.removeItem('authenticated');
-            sessionStorage.removeItem('returnUrl');
-            
-            // Redirect to Okta logout, then back to current page
-            const returnTo = encodeURIComponent(CURRENT_PAGE_URL);
-            window.location.href = `https://${OKTA_DOMAIN}/login/signout?fromURI=${returnTo}`;
-        }
-
-        // Initialize on page load
-        checkAuthState();
-    </script>
-</body>
-</html>
+  init().catch(err => {
+    console.error("Auth error:", err);
+    updateDropdownMenu(false);
+  });
+</script>
