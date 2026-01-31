@@ -9,177 +9,280 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Open+Sans:wght@400;600;700&display=swap" rel="stylesheet">
 
-    <!-- Okta Auth JS (OIDC Auth Code + PKCE) -->
+    <!-- Okta Auth JS SDK -->
     <script src="https://global.oktacdn.com/okta-auth-js/7.7.0/okta-auth-js.min.js"></script>
 
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body { font-family: 'Open Sans', Arial, sans-serif; background-color: #0a0e27; color: #333; min-height: 100vh; }
 
-        /* Navigation */
+        /* Top Header */
         .top-header { background-color: #0a0e27; padding: 15px 0; border-bottom: 1px solid rgba(255, 255, 255, 0.1); }
         .top-header-content { max-width: 1400px; margin: 0 auto; padding: 0 40px; display: flex; justify-content: space-between; align-items: center; }
         .logo-section { display: flex; align-items: center; gap: 15px; }
         .logo-x { font-size: 48px; font-weight: 700; background: linear-gradient(135deg, #a855f7 0%, #ec4899 50%, #f97316 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; line-height: 1; }
         .logo-text { color: white; font-size: 28px; font-weight: 700; text-transform: uppercase; letter-spacing: -0.5px; line-height: 1.2; }
         .logo-text span { display: block; }
-        .contact-link { color: white; text-decoration: none; font-size: 14px; }
+        .contact-link { color: white; text-decoration: none; font-size: 14px; display: flex; align-items: center; gap: 10px; }
+        .contact-link:hover { color: #ec4899; }
 
-        .magenta-bar { background: linear-gradient(90deg, #c026d3 0%, #db2777 100%); padding: 12px 0; }
+        /* Magenta Bar */
+        .magenta-bar { background: linear-gradient(90deg, #c026d3 0%, #db2777 100%); padding: 12px 0; position: relative; }
         .magenta-bar-content { max-width: 1400px; margin: 0 auto; padding: 0 40px; text-align: right; }
-
-        .your-account { color: white; font-size: 16px; font-weight: 600; display: inline-flex; align-items: center; gap: 8px; cursor: pointer; padding: 8px 15px; border-radius: 4px; }
         .account-dropdown { position: relative; display: inline-block; }
-        .dropdown-menu { position: absolute; top: 100%; right: 0; background: white; min-width: 200px; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15); border-radius: 4px; margin-top: 8px; opacity: 0; visibility: hidden; transition: all 0.3s ease; z-index: 1000; }
-        .account-dropdown:hover .dropdown-menu { opacity: 1; visibility: visible; }
-        .dropdown-menu a { display: block; padding: 12px 20px; color: #333; text-decoration: none; font-size: 14px; text-align: left; border-bottom: 1px solid #eee; }
+        .your-account { color: white; font-size: 16px; font-weight: 600; display: inline-flex; align-items: center; gap: 8px; cursor: pointer; padding: 8px 15px; border-radius: 4px; transition: background-color 0.3s; }
+        .your-account:hover { background-color: rgba(255, 255, 255, 0.1); }
+        .dropdown-menu { position: absolute; top: 100%; right: 0; background: white; min-width: 200px; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15); border-radius: 4px; margin-top: 8px; opacity: 0; visibility: hidden; transform: translateY(-10px); transition: all 0.3s ease; z-index: 1000; }
+        .account-dropdown:hover .dropdown-menu { opacity: 1; visibility: visible; transform: translateY(0); }
+        .dropdown-menu a { display: block; padding: 12px 20px; color: #333; text-decoration: none; transition: background-color 0.3s; font-size: 14px; }
         .dropdown-menu a:hover { background-color: #f5f5f5; color: #c026d3; }
 
-        /* Notification Bar */
-        #welcomeMessage { background: #22c55e; color: white; padding: 15px; text-align: center; font-weight: 600; display: none; }
+        /* Welcome Message */
+        .welcome-message { background: linear-gradient(135deg, #10b981 0%, #059669 100%); color: white; padding: 15px; text-align: center; font-size: 16px; font-weight: 600; display: none; }
+        .welcome-message.show { display: block; }
 
-        /* Content Area */
-        .main-content { background-color: #f5f5f5; padding: 40px 0; min-height: 600px; }
+        /* Main Content */
+        .main-content { background-color: #f5f5f5; min-height: calc(100vh - 300px); padding: 40px 0; }
         .content-wrapper { max-width: 1400px; margin: 0 auto; padding: 0 40px; }
-        .page-title { font-size: 42px; font-weight: 700; color: #1a1a1a; margin-bottom: 20px; }
-        .highlight { color: #c026d3; }
+        .breadcrumb { margin-bottom: 30px; font-size: 14px; color: #666; }
+        .breadcrumb a { color: #666; text-decoration: none; }
+        .breadcrumb a:hover { color: #c026d3; }
+        .breadcrumb .current { color: #c026d3; font-weight: 600; }
+        .page-title { font-size: 42px; font-weight: 700; color: #1a1a1a; margin-bottom: 20px; line-height: 1.2; }
+        .page-title .highlight { color: #c026d3; }
         .page-description { color: #666; line-height: 1.8; margin-bottom: 40px; font-size: 15px; max-width: 900px; }
 
-        .banner-image-container { margin-top: 40px; border-radius: 8px; overflow: hidden; box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1); background: #0a0e27; padding: 60px; text-align: center; }
-        .footer { background-color: #0a0e27; color: white; padding: 30px 0; text-align: center; }
+        /* Banner Image */
+        .banner-image-container { margin-top: 40px; border-radius: 8px; overflow: hidden; box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15); }
+        .banner-image-container img { width: 100%; height: auto; display: block; }
+
+        /* Footer */
+        .footer { background-color: #0a0e27; color: white; padding: 30px 0; }
+        .footer-content { max-width: 1400px; margin: 0 auto; padding: 0 40px; text-align: center; }
+        .footer a { color: #ec4899; text-decoration: none; }
+        .footer a:hover { text-decoration: underline; }
+
+        @media (max-width: 768px) {
+            .top-header-content, .magenta-bar-content, .content-wrapper { padding: 0 20px; }
+            .logo-text { font-size: 20px; }
+            .page-title { font-size: 32px; }
+        }
     </style>
 </head>
-
 <body>
+    <!-- Top Header -->
     <div class="top-header">
         <div class="top-header-content">
             <div class="logo-section">
-                <div class="logo-icon"><span class="logo-x">✕</span></div>
-                <div class="logo-text"><span>EXCLUSIVE</span><span>ACCESS</span></div>
+                <div class="logo-icon">
+                    <span class="logo-x">✕</span>
+                </div>
+                <div class="logo-text">
+                    <span>EXCLUSIVE</span>
+                    <span>ACCESS</span>
+                </div>
             </div>
-            <a href="#" class="contact-link">Contact us</a>
+            <div>
+                <a href="https://www.exclusive-networks.com/usa/contact-local/" class="contact-link">
+                    Contact us
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M9 5l7 7-7 7"/>
+                    </svg>
+                </a>
+            </div>
         </div>
     </div>
 
-    <div id="welcomeMessage">✓ Authentication Successful! Welcome to the secure partner portal.</div>
+    <!-- Welcome Message -->
+    <div class="welcome-message" id="welcomeMessage">
+        ✓ Successfully authenticated! Welcome to the Exclusive Networks Portal.
+    </div>
 
+    <!-- Magenta Bar with Dropdown -->
     <div class="magenta-bar">
         <div class="magenta-bar-content">
             <div class="account-dropdown">
-                <div class="your-account">Your Account ▼</div>
+                <div class="your-account">
+                    Your Account
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="white">
+                        <path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/>
+                    </svg>
+                </div>
                 <div class="dropdown-menu" id="dropdownMenu">
-                    <!-- JS will populate -->
-                    <a href="#" id="loginLink">Log in</a>
-                    <a href="https://demo-ocimaster.okta.com/signin/register" id="registerLink">Create Account</a>
+                    <!-- Populated by JavaScript -->
                 </div>
             </div>
         </div>
     </div>
 
+    <!-- Main Content -->
     <div class="main-content">
         <div class="content-wrapper">
-            <h1 class="page-title" id="mainTitle">Login to your <span class="highlight">Customer Portal.</span></h1>
-            <p class="page-description" id="mainDesc">
-                Securely access order tracking, invoices, and real-time stock levels.
-                Exclusive Networks provides centralized identity management for all partners.
+            <!-- Breadcrumb -->
+            <div class="breadcrumb">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" style="display: inline; vertical-align: middle;">
+                    <path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/>
+                </svg>
+                <a href="#">Home</a> / <span class="current">Customer Portal</span>
+            </div>
+
+            <!-- Page Title -->
+            <h1 class="page-title" id="pageTitle">Login to your <span class="highlight">Customer Portal.</span></h1>
+            <p class="page-description" id="pageDescription">
+                On this customer portal you can access services/features & information you may need. 
+                It contains features such as Order tracking, Available stocks, Price list, Invoices. 
+                This customer portal is a digital sharing mechanism and information center between a 
+                company or organization and its customers and can be accessed with a sign in credentials.
             </p>
+
+            <!-- Banner Image -->
             <div class="banner-image-container">
-                <img src="enetworks.png" alt="Exclusive Networks" style="max-width: 800px;">
+                <img src="/mnt/user-data/uploads/Screenshot_2026-01-31_at_21_19_07.png" alt="Fortinet Engage Preferred Services Partner">
             </div>
         </div>
     </div>
 
+    <!-- Footer -->
     <div class="footer">
-        <p>&copy; 2026 Exclusive Networks. Securely Powered by Okta CIAM.</p>
+        <div class="footer-content">
+            <p>&copy; 2026 Exclusive Networks. All rights reserved.</p>
+            <p style="margin-top: 10px;">
+                <a href="#">Privacy Policy</a> | 
+                <a href="#">Terms of Service</a> | 
+                <a href="https://www.exclusive-networks.com/usa/contact-local/">Support</a>
+            </p>
+        </div>
     </div>
 
     <script>
-      /***********************
-       * OKTA CONFIG
-       ***********************/
-      const OKTA_DOMAIN = "https://demo-ocimaster.okta.com";
-      const CLIENT_ID   = "0oazpnnecis3YdhQM697";
-      const ISSUER      = `${OKTA_DOMAIN}/oauth2/default`;
+        /***********************
+         * OKTA CONFIGURATION
+         ***********************/
+        const OKTA_DOMAIN = "demo-ocimaster.okta.com";
+        const CLIENT_ID = "0oazpnnecis3YdhQM697";
+        const ISSUER = `https://${OKTA_DOMAIN}/oauth2/default`;
+        
+        // THIS MUST MATCH YOUR OKTA APP REDIRECT URI EXACTLY
+        // For local testing: window.location.origin (e.g., http://localhost:8000)
+        // For production: https://exclusive-networks-portal.vercel.app/
+        const REDIRECT_URI = "https://exclusive-networks-portal.vercel.app/";
 
-      // This page is the callback
-      const REDIRECT_URI = window.location.origin + window.location.pathname;
-
-      const authClient = new OktaAuth({
-        issuer: ISSUER,
-        clientId: CLIENT_ID,
-        redirectUri: REDIRECT_URI,
-        scopes: ["openid", "profile", "email"],
-        transactionManager: { storage: "sessionStorage" },
-        tokenManager: { storage: "localStorage" }
-      });
-
-      function showWelcome() {
-        const el = document.getElementById("welcomeMessage");
-        el.style.display = "block";
-        setTimeout(() => { el.style.display = "none"; }, 5000);
-      }
-
-      function setLoggedInUI() {
-        document.getElementById("mainTitle").innerHTML =
-          'Welcome to the <span class="highlight">Secure Portal.</span>';
-        document.getElementById("mainDesc").innerText =
-          "Your partner session is active. You now have access to privileged pricing and stock availability.";
-
-        const menu = document.getElementById("dropdownMenu");
-        menu.innerHTML = `
-          <a href="#" id="logoutLink">Logout</a>
-        `;
-        document.getElementById("logoutLink").addEventListener("click", doLogout);
-      }
-
-      function setLoggedOutUI() {
-        const menu = document.getElementById("dropdownMenu");
-        menu.innerHTML = `
-          <a href="#" id="loginLink">Log in</a>
-          <a href="https://demo-ocimaster.okta.com/signin/register" id="registerLink">Create Account</a>
-        `;
-        document.getElementById("loginLink").addEventListener("click", doLogin);
-      }
-
-      async function doLogin(e) {
-        e.preventDefault();
-
-        // Force the proper OIDC /authorize PKCE redirect (NOT the tile link)
-        await authClient.token.getWithRedirect({
-          responseType: "code",
-          scopes: ["openid", "profile", "email"],
-          prompt: "login"
+        // Initialize Okta Auth Client
+        const authClient = new OktaAuth({
+            issuer: ISSUER,
+            clientId: CLIENT_ID,
+            redirectUri: REDIRECT_URI,
+            scopes: ['openid', 'profile', 'email'],
+            pkce: true,
+            tokenManager: {
+                storage: 'localStorage'
+            }
         });
-      }
 
-      async function doLogout(e) {
-        e.preventDefault();
-        await authClient.tokenManager.clear();
-        await authClient.signOut({ postLogoutRedirectUri: REDIRECT_URI });
-      }
-
-      async function init() {
-        // Complete the redirect callback
-        if (authClient.isLoginRedirect()) {
-          await authClient.handleRedirect();
-          history.replaceState({}, document.title, REDIRECT_URI);
-          showWelcome();
+        // Show welcome message
+        function showWelcome() {
+            const welcomeMsg = document.getElementById('welcomeMessage');
+            welcomeMsg.classList.add('show');
+            setTimeout(() => {
+                welcomeMsg.classList.remove('show');
+            }, 5000);
         }
 
-        const isAuth = await authClient.isAuthenticated();
+        // Update UI for logged in state
+        function setLoggedInUI(userInfo) {
+            document.getElementById('pageTitle').innerHTML = 
+                'Welcome to your <span class="highlight">Customer Portal.</span>';
+            document.getElementById('pageDescription').textContent = 
+                'You are now securely authenticated. Access your orders, invoices, and real-time stock information.';
 
-        if (isAuth) {
-          setLoggedInUI();
+            const dropdown = document.getElementById('dropdownMenu');
+            dropdown.innerHTML = `
+                <a href="#" id="logoutLink">Logout</a>
+            `;
+            
+            document.getElementById('logoutLink').addEventListener('click', handleLogout);
+        }
+
+        // Update UI for logged out state
+        function setLoggedOutUI() {
+            document.getElementById('pageTitle').innerHTML = 
+                'Login to your <span class="highlight">Customer Portal.</span>';
+            document.getElementById('pageDescription').textContent = 
+                'On this customer portal you can access services/features & information you may need. It contains features such as Order tracking, Available stocks, Price list, Invoices. This customer portal is a digital sharing mechanism and information center between a company or organization and its customers and can be accessed with a sign in credentials.';
+
+            const dropdown = document.getElementById('dropdownMenu');
+            dropdown.innerHTML = `
+                <a href="#" id="loginLink">Log in</a>
+            `;
+            
+            document.getElementById('loginLink').addEventListener('click', handleLogin);
+        }
+
+        // Handle login
+        async function handleLogin(e) {
+            e.preventDefault();
+            
+            try {
+                // This will redirect to Okta's login page
+                await authClient.token.getWithRedirect({
+                    scopes: ['openid', 'profile', 'email']
+                });
+            } catch (error) {
+                console.error('Login error:', error);
+                alert('Login failed. Please try again.');
+            }
+        }
+
+        // Handle logout
+        async function handleLogout(e) {
+            e.preventDefault();
+            
+            try {
+                await authClient.signOut({
+                    postLogoutRedirectUri: REDIRECT_URI
+                });
+            } catch (error) {
+                console.error('Logout error:', error);
+            }
+        }
+
+        // Initialize the application
+        async function init() {
+            try {
+                // Check if we're coming back from Okta redirect
+                if (authClient.isLoginRedirect()) {
+                    // Handle the callback
+                    await authClient.handleLoginRedirect();
+                    
+                    // Clean up URL
+                    window.history.replaceState({}, document.title, REDIRECT_URI);
+                    
+                    // Show welcome message
+                    showWelcome();
+                }
+
+                // Check if user is authenticated
+                const isAuthenticated = await authClient.isAuthenticated();
+
+                if (isAuthenticated) {
+                    // Get user info
+                    const userInfo = await authClient.getUser();
+                    setLoggedInUI(userInfo);
+                } else {
+                    setLoggedOutUI();
+                }
+            } catch (error) {
+                console.error('Initialization error:', error);
+                setLoggedOutUI();
+            }
+        }
+
+        // Start the app when DOM is ready
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', init);
         } else {
-          setLoggedOutUI();
+            init();
         }
-      }
-
-      init().catch(err => {
-        console.error("[EN Portal] Auth error:", err);
-        try { authClient.transactionManager.clear(); } catch (e) {}
-        setLoggedOutUI();
-      });
     </script>
 </body>
 </html>
