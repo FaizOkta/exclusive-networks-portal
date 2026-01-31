@@ -4,9 +4,14 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Customer Portal - Exclusive Networks</title>
+
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Open+Sans:wght@400;600;700&display=swap" rel="stylesheet">
+
+    <!-- Okta Auth JS (OIDC Auth Code + PKCE) -->
+    <script src="https://global.oktacdn.com/okta-auth-js/7.7.0/okta-auth-js.min.js"></script>
+
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body { font-family: 'Open Sans', Arial, sans-serif; background-color: #0a0e27; color: #333; min-height: 100vh; }
@@ -19,10 +24,10 @@
         .logo-text { color: white; font-size: 28px; font-weight: 700; text-transform: uppercase; letter-spacing: -0.5px; line-height: 1.2; }
         .logo-text span { display: block; }
         .contact-link { color: white; text-decoration: none; font-size: 14px; }
-        
+
         .magenta-bar { background: linear-gradient(90deg, #c026d3 0%, #db2777 100%); padding: 12px 0; }
         .magenta-bar-content { max-width: 1400px; margin: 0 auto; padding: 0 40px; text-align: right; }
-        
+
         .your-account { color: white; font-size: 16px; font-weight: 600; display: inline-flex; align-items: center; gap: 8px; cursor: pointer; padding: 8px 15px; border-radius: 4px; }
         .account-dropdown { position: relative; display: inline-block; }
         .dropdown-menu { position: absolute; top: 100%; right: 0; background: white; min-width: 200px; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15); border-radius: 4px; margin-top: 8px; opacity: 0; visibility: hidden; transition: all 0.3s ease; z-index: 1000; }
@@ -39,11 +44,12 @@
         .page-title { font-size: 42px; font-weight: 700; color: #1a1a1a; margin-bottom: 20px; }
         .highlight { color: #c026d3; }
         .page-description { color: #666; line-height: 1.8; margin-bottom: 40px; font-size: 15px; max-width: 900px; }
-        
+
         .banner-image-container { margin-top: 40px; border-radius: 8px; overflow: hidden; box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1); background: #0a0e27; padding: 60px; text-align: center; }
         .footer { background-color: #0a0e27; color: white; padding: 30px 0; text-align: center; }
     </style>
 </head>
+
 <body>
     <div class="top-header">
         <div class="top-header-content">
@@ -62,8 +68,9 @@
             <div class="account-dropdown">
                 <div class="your-account">Your Account ▼</div>
                 <div class="dropdown-menu" id="dropdownMenu">
-                    <a href="https://demo-ocimaster.okta.com/home/oidc_client/0oazpnnecis3YdhQM697/aln177a159h7Zf52X0g8">Log in</a>
-                    <a href="https://demo-ocimaster.okta.com/signin/register">Create Account</a>
+                    <!-- JS will populate -->
+                    <a href="#" id="loginLink">Log in</a>
+                    <a href="https://demo-ocimaster.okta.com/signin/register" id="registerLink">Create Account</a>
                 </div>
             </div>
         </div>
@@ -73,7 +80,7 @@
         <div class="content-wrapper">
             <h1 class="page-title" id="mainTitle">Login to your <span class="highlight">Customer Portal.</span></h1>
             <p class="page-description" id="mainDesc">
-                Securely access order tracking, invoices, and real-time stock levels. 
+                Securely access order tracking, invoices, and real-time stock levels.
                 Exclusive Networks provides centralized identity management for all partners.
             </p>
             <div class="banner-image-container">
@@ -87,35 +94,92 @@
     </div>
 
     <script>
-        (function() {
-            try {
-                const OKTA_DOMAIN = 'demo-ocimaster.okta.com';
-                const hash = window.location.hash;
-                const search = window.location.search;
-                
-                // Detection for return from Okta
-                const isReturning = hash.includes('id_token') || search.includes('code');
-                const isAuth = isReturning || sessionStorage.getItem('okta_active') === 'true';
+      /***********************
+       * OKTA CONFIG
+       ***********************/
+      const OKTA_DOMAIN = "https://demo-ocimaster.okta.com";
+      const CLIENT_ID   = "0oazpnnecis3YdhQM697";
+      const ISSUER      = `${OKTA_DOMAIN}/oauth2/default`;
 
-                if (isAuth) {
-                    sessionStorage.setItem('okta_active', 'true');
-                    document.getElementById('welcomeMessage').style.display = 'block';
-                    document.getElementById('mainTitle').innerHTML = 'Welcome to the <span class="highlight">Secure Portal.</span>';
-                    document.getElementById('mainDesc').innerText = 'Your partner session is active. You now have access to privileged pricing and stock availability.';
-                    
-                    // Update Dropdown for logged in state
-                    const logoutUrl = `https://${OKTA_DOMAIN}/login/signout?fromURI=${encodeURIComponent(window.location.origin)}`;
-                    document.getElementById('dropdownMenu').innerHTML = `<a href="#" onclick="sessionStorage.clear(); window.location.href='${logoutUrl}'">Logout</a>`;
+      // This page is the callback
+      const REDIRECT_URI = window.location.origin + window.location.pathname;
 
-                    // Clean URL without breaking the page
-                    if (isReturning) {
-                        window.history.replaceState({}, document.title, window.location.pathname);
-                    }
-                }
-            } catch (e) {
-                console.error("Auth check failed", e);
-            }
-        })();
+      const authClient = new OktaAuth({
+        issuer: ISSUER,
+        clientId: CLIENT_ID,
+        redirectUri: REDIRECT_URI,
+        scopes: ["openid", "profile", "email"],
+        transactionManager: { storage: "sessionStorage" },
+        tokenManager: { storage: "localStorage" }
+      });
+
+      function showWelcome() {
+        const el = document.getElementById("welcomeMessage");
+        el.style.display = "block";
+        setTimeout(() => { el.style.display = "none"; }, 5000);
+      }
+
+      function setLoggedInUI() {
+        document.getElementById("mainTitle").innerHTML =
+          'Welcome to the <span class="highlight">Secure Portal.</span>';
+        document.getElementById("mainDesc").innerText =
+          "Your partner session is active. You now have access to privileged pricing and stock availability.";
+
+        const menu = document.getElementById("dropdownMenu");
+        menu.innerHTML = `
+          <a href="#" id="logoutLink">Logout</a>
+        `;
+        document.getElementById("logoutLink").addEventListener("click", doLogout);
+      }
+
+      function setLoggedOutUI() {
+        const menu = document.getElementById("dropdownMenu");
+        menu.innerHTML = `
+          <a href="#" id="loginLink">Log in</a>
+          <a href="https://demo-ocimaster.okta.com/signin/register" id="registerLink">Create Account</a>
+        `;
+        document.getElementById("loginLink").addEventListener("click", doLogin);
+      }
+
+      async function doLogin(e) {
+        e.preventDefault();
+
+        // Force the proper OIDC /authorize PKCE redirect (NOT the tile link)
+        await authClient.token.getWithRedirect({
+          responseType: "code",
+          scopes: ["openid", "profile", "email"],
+          prompt: "login"
+        });
+      }
+
+      async function doLogout(e) {
+        e.preventDefault();
+        await authClient.tokenManager.clear();
+        await authClient.signOut({ postLogoutRedirectUri: REDIRECT_URI });
+      }
+
+      async function init() {
+        // Complete the redirect callback
+        if (authClient.isLoginRedirect()) {
+          await authClient.handleRedirect();
+          history.replaceState({}, document.title, REDIRECT_URI);
+          showWelcome();
+        }
+
+        const isAuth = await authClient.isAuthenticated();
+
+        if (isAuth) {
+          setLoggedInUI();
+        } else {
+          setLoggedOutUI();
+        }
+      }
+
+      init().catch(err => {
+        console.error("[EN Portal] Auth error:", err);
+        try { authClient.transactionManager.clear(); } catch (e) {}
+        setLoggedOutUI();
+      });
     </script>
 </body>
 </html>
