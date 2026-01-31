@@ -1,84 +1,151 @@
-<script src="https://global.oktacdn.com/okta-auth-js/7.7.0/okta-auth-js.min.js"></script>
-<script>
-  /****************************************************
-   * OKTA CONFIG – UPDATE THESE TWO VALUES
-   ****************************************************/
-  const OKTA_DOMAIN = "https://demo-ocimaster.okta.com";
-  const CLIENT_ID   = "0oazpnnecis3YdhQM697";
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Customer Portal - Exclusive Networks</title>
 
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Open+Sans:wght@400;600;700&display=swap" rel="stylesheet">
+
+    <!-- Okta Auth JS -->
+    <script src="https://global.oktacdn.com/okta-auth-js/7.7.0/okta-auth-js.min.js"></script>
+
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Open Sans', Arial, sans-serif; background-color: #0a0e27; color: #333; }
+
+        .top-header { background-color: #0a0e27; padding: 15px 0; border-bottom: 1px solid rgba(255,255,255,0.1); }
+        .top-header-content { max-width: 1400px; margin: 0 auto; padding: 0 40px; display: flex; justify-content: space-between; align-items: center; }
+        .logo-section { display: flex; align-items: center; gap: 15px; }
+        .logo-x { font-size: 48px; font-weight: 700; background: linear-gradient(135deg,#a855f7,#ec4899,#f97316); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+        .logo-text { color: white; font-size: 28px; font-weight: 700; text-transform: uppercase; }
+        .contact-link { color: white; text-decoration: none; font-size: 14px; display: flex; align-items: center; gap: 10px; }
+
+        .magenta-bar { background: linear-gradient(90deg,#c026d3,#db2777); padding: 12px 0; }
+        .magenta-bar-content { max-width: 1400px; margin: 0 auto; padding: 0 40px; text-align: right; }
+
+        .account-dropdown { position: relative; display: inline-block; }
+        .your-account { color: white; font-size: 16px; font-weight: 600; cursor: pointer; padding: 8px 15px; border-radius: 4px; }
+        .your-account:hover { background-color: rgba(255,255,255,0.1); }
+
+        .dropdown-menu { position: absolute; top: 100%; right: 0; background: white; min-width: 200px; box-shadow: 0 4px 12px rgba(0,0,0,0.15); border-radius: 4px; margin-top: 8px; opacity: 0; visibility: hidden; transform: translateY(-10px); transition: all 0.3s ease; z-index: 1000; }
+        .account-dropdown:hover .dropdown-menu { opacity: 1; visibility: visible; transform: translateY(0); }
+        .dropdown-menu a { display: block; padding: 12px 20px; color: #333; text-decoration: none; font-size: 14px; }
+        .dropdown-menu a:hover { background-color: #f5f5f5; color: #c026d3; }
+
+        .welcome-message { background: linear-gradient(135deg,#a855f7,#ec4899); color: white; padding: 15px; text-align: center; font-size: 16px; font-weight: 600; display: none; }
+        .welcome-message.show { display: block; }
+
+        .main-content { background-color: #f5f5f5; padding: 40px 0; }
+        .content-wrapper { max-width: 1400px; margin: 0 auto; padding: 0 40px; }
+
+        .page-title { font-size: 42px; font-weight: 700; margin-bottom: 20px; }
+        .page-title .highlight { color: #c026d3; }
+
+        .footer { background-color: #0a0e27; color: white; padding: 30px 0; margin-top: 60px; text-align: center; }
+    </style>
+</head>
+
+<body>
+
+<!-- HEADER -->
+<div class="top-header">
+    <div class="top-header-content">
+        <div class="logo-section">
+            <span class="logo-x">✕</span>
+            <div class="logo-text">EXCLUSIVE<br>ACCESS</div>
+        </div>
+        <a href="https://www.exclusive-networks.com/usa/contact-local/" class="contact-link">Contact us</a>
+    </div>
+</div>
+
+<!-- WELCOME -->
+<div class="welcome-message" id="welcomeMessage">
+    ✓ Successfully authenticated! Welcome back.
+</div>
+
+<!-- NAV -->
+<div class="magenta-bar">
+    <div class="magenta-bar-content">
+        <div class="account-dropdown">
+            <div class="your-account">Your Account</div>
+            <div class="dropdown-menu" id="dropdownMenu"></div>
+        </div>
+    </div>
+</div>
+
+<!-- CONTENT -->
+<div class="main-content">
+    <div class="content-wrapper">
+        <h1 class="page-title">Login to your <span class="highlight">Customer Portal</span></h1>
+        <p>
+            Access services such as order tracking, pricing, invoices and partner information using a single secure identity.
+        </p>
+    </div>
+</div>
+
+<!-- FOOTER -->
+<div class="footer">
+    <p>&copy; 2026 Exclusive Networks. All rights reserved.</p>
+</div>
+
+<!-- ✅ FINAL OKTA AUTH SCRIPT -->
+<script>
+  /***********************
+   * OKTA CONFIG (FINAL)
+   ***********************/
+  const OKTA_DOMAIN = "https://demo-ocimaster.okta.com";
+  const CLIENT_ID  = "0oazpnnecis3YdhQM697";
+  const ISSUER     = `${OKTA_DOMAIN}/oauth2/default`;
   const REDIRECT_URI = window.location.origin + window.location.pathname;
-  const ISSUER = `${OKTA_DOMAIN}/oauth2/default`;
 
   const authClient = new OktaAuth({
     issuer: ISSUER,
     clientId: CLIENT_ID,
     redirectUri: REDIRECT_URI,
-    scopes: ["openid", "profile", "email"],
+    scopes: ["openid","profile","email"],
     transactionManager: { storage: "sessionStorage" },
     tokenManager: { storage: "localStorage" }
   });
 
-  /****************************************************
-   * UI HELPERS
-   ****************************************************/
   function showWelcome() {
-    const banner = document.getElementById("welcomeMessage");
-    banner.classList.add("show");
-    setTimeout(() => banner.classList.remove("show"), 5000);
+    const el = document.getElementById("welcomeMessage");
+    el.classList.add("show");
+    setTimeout(() => el.classList.remove("show"), 5000);
   }
 
-  function updateDropdownMenu(isAuthenticated) {
-    const dropdownMenu = document.getElementById("dropdownMenu");
-
-    if (isAuthenticated) {
-      dropdownMenu.innerHTML = `
-        <a href="#" onclick="logout(event)">Logout</a>
-      `;
-    } else {
-      dropdownMenu.innerHTML = `
-        <a href="#" onclick="login(event)">Log in</a>
-      `;
-    }
+  function updateMenu(isAuth) {
+    const menu = document.getElementById("dropdownMenu");
+    menu.innerHTML = isAuth
+      ? `<a href="#" onclick="logout(event)">Logout</a>`
+      : `<a href="#" onclick="login(event)">Log in</a>`;
   }
 
-  /****************************************************
-   * AUTH FLOW
-   ****************************************************/
-  async function login(event) {
-    event.preventDefault();
-    await authClient.signInWithRedirect({
-      extraParams: { prompt: "login" }
-    });
+  async function login(e) {
+    e.preventDefault();
+    await authClient.signInWithRedirect({ extraParams: { prompt: "login" }});
   }
 
-  async function logout(event) {
-    event.preventDefault();
+  async function logout(e) {
+    e.preventDefault();
     await authClient.tokenManager.clear();
-    await authClient.signOut({
-      postLogoutRedirectUri: window.location.origin + window.location.pathname
-    });
+    await authClient.signOut({ postLogoutRedirectUri: REDIRECT_URI });
   }
 
   async function init() {
-    // Handle redirect back from Okta
     if (authClient.isLoginRedirect()) {
       await authClient.handleRedirect();
-      window.history.replaceState({}, document.title, window.location.pathname);
+      history.replaceState({}, document.title, REDIRECT_URI);
       showWelcome();
     }
-
-    const isAuthenticated = await authClient.isAuthenticated();
-    updateDropdownMenu(isAuthenticated);
-
-    // Optional: expose user info later if you want
-    // if (isAuthenticated) {
-    //   const user = await authClient.getUser();
-    //   console.log("Logged in user:", user);
-    // }
+    updateMenu(await authClient.isAuthenticated());
   }
 
-  init().catch(err => {
-    console.error("Auth error:", err);
-    updateDropdownMenu(false);
-  });
+  init();
 </script>
+
+</body>
+</html>
