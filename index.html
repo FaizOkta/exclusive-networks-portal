@@ -45,48 +45,39 @@
   <script>
     /**
      * ===========================
-     * OKTA SPA CONFIG (EDIT ME)
+     * OKTA SPA CONFIG
      * ===========================
-     * You said your Okta domain is demo-ocimaster.okta.com and client_id is:
-     * 0oazpnnecis3YdhQM697
-     *
-     * Redirect URI MUST match your Okta app settings exactly.
      */
     const OKTA_DOMAIN = "https://demo-ocimaster.okta.com";
-    const CLIENT_ID = "0oazpnnecis3YdhQM697";
+    const CLIENT_ID   = "0oazpnnecis3YdhQM697";
 
     // Your Vercel URLs
-    const BASE_URL = "https://exclusive-networks-portal.vercel.app";
+    const BASE_URL     = "https://exclusive-networks-portal.vercel.app";
     const REDIRECT_URI = `${BASE_URL}/dashboard.html`;
 
-    // Most orgs use /oauth2/default; if you use a custom auth server, change this.
+    // If you use a custom auth server, change this.
     const ISSUER = `${OKTA_DOMAIN}/oauth2/default`;
 
     const authClient = new OktaAuth({
       issuer: ISSUER,
       clientId: CLIENT_ID,
       redirectUri: REDIRECT_URI,
-      scopes: ["openid", "profile", "email", "groups"],
-      // tokenManager storage defaults to localStorage; that's fine for a demo.
+      scopes: ["openid", "profile", "email"],
+      // Store PKCE transaction in sessionStorage to avoid concurrency/stale verifier issues
+      transactionManager: {
+        storage: "sessionStorage"
+      },
+      tokenManager: {
+        storage: "localStorage"
+      }
     });
 
     async function signIn() {
-      // Starts Authorization Code + PKCE redirect flow
-      await authClient.signInWithRedirect();
+      // Force Okta login UI for demos (even if SSO session exists)
+      await authClient.signInWithRedirect({
+        extraParams: { prompt: "login" }
+      });
     }
-
-    async function goDashboardIfLoggedIn() {
-      try {
-        const isAuth = await authClient.isAuthenticated();
-        if (isAuth) {
-          window.location.href = "/dashboard.html";
-        }
-      } catch (e) {
-        // ignore
-      }
-    }
-
-    document.addEventListener("DOMContentLoaded", goDashboardIfLoggedIn);
   </script>
 </head>
 
@@ -97,7 +88,7 @@
     <header class="pt-8 px-6 md:px-12 max-w-7xl mx-auto w-full flex justify-between items-center">
       <h1 class="clash-display text-2xl font-bold tracking-tight">EXCLUSIVE NETWORKS</h1>
 
-      <!-- Keep your partner registration link (optional) -->
+      <!-- Optional: keep your partner registration link -->
       <a href="https://demo-ocimaster.okta.com/signin/register"
          class="hidden md:block text-sm text-blue-200 hover:text-white transition-colors">
         Partner Registration
@@ -110,7 +101,6 @@
           Central Identity <span class="text-blue-400 block mt-2">Portal</span>
         </h2>
 
-        <!-- Removed emoji for a more professional demo look -->
         <p class="text-xl text-blue-100 mb-10 fade-in-up" style="animation-delay: 0.2s">
           Secure access for partners and customers
         </p>
